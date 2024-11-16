@@ -1,2 +1,25 @@
-.vscode
+.idea/
+.vscode/
 build
+*.swp
+*~
+
+
+# Simple Build Tool
+# http://www.scala-sbt.org/release/docs/Getting-Started/Directories.html#configuring-version-control
+
+dist/*
+target/
+lib_managed/
+src_managed/
+.history
+.cache
+.lib/
+
+project/*
+!project/plugins.sbt
+!project/build.properties
+.bloop/
+.metals/
+.bsp/
+test_run_dir/
