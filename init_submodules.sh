@@ -27,7 +27,6 @@ git submodule update --init
 # a_core_base_chisel must be first as it also builds a_core_common
 SUBMODULES="\
     ACoreChip \
-    sw/riscv-c-tests \
     "
 for module in $SUBMODULES; do
     cd ${DIR}/${module}
