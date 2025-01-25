@@ -126,6 +126,12 @@ const char* getExceptionCause(uint8_t mcause) {
     }
 }
 
+// nice table in https://github.com/michaeljclark/riscv-meta/blob/master/registers
+const char* rv_regnames[32] = {
+    "x0 ", "ra ", "sp ", "gp ", "tp ", "t0 ", "t1 ", "t2 ", "s0 ", "s1 ", "a0 ", "a1 ", "a2 ", "a3 ", "a4 ", "a5 ",
+    "a6 ", "a7 ", "s2 ", "s3 ", "s4 ", "s5 ", "s6 ", "s7 ", "s8 ", "s9 ", "s10", "s11", "t3 ", "t4 ", "t5 ", "t6 "
+};
+
 // this is organic human-made slop!
 void printRegs(const std::unique_ptr<Vacorechip>& top) {
     uint32_t* regfile[32] = {
@@ -164,10 +170,10 @@ void printRegs(const std::unique_ptr<Vacorechip>& top) {
     };
     printf("REGISTER DUMP\n");
     for (int i = 0; i < 32; i+=4) {
-        printf("x%d%s = 0x%08x    ", i+0, i+0<10 ? " " : "", *(regfile[i+0]));
-        printf("x%d%s = 0x%08x    ", i+1, i+1<10 ? " " : "", *(regfile[i+1]));
-        printf("x%d%s = 0x%08x    ", i+2, i+2<10 ? " " : "", *(regfile[i+2]));
-        printf("x%d%s = 0x%08x\n",   i+3, i+3<10 ? " " : "", *(regfile[i+3]));
+        printf("x%d%s = %s = 0x%08x    ", i+0, i+0<10 ? " " : "", rv_regnames[i+0], *(regfile[i+0]));
+        printf("x%d%s = %s = 0x%08x    ", i+1, i+1<10 ? " " : "", rv_regnames[i+1], *(regfile[i+1]));
+        printf("x%d%s = %s = 0x%08x    ", i+2, i+2<10 ? " " : "", rv_regnames[i+2], *(regfile[i+2]));
+        printf("x%d%s = %s = 0x%08x\n",   i+3, i+3<10 ? " " : "", rv_regnames[i+3], *(regfile[i+3]));
     }
 }
 
