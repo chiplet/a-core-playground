@@ -1,3 +1,6 @@
 [submodule "ACoreChip"]
 	path = ACoreChip
 	url = git@gitlab.com:a-core/a-core_chisel/ACoreChip.git
+[submodule "sw/a-core_doom"]
+	path = sw/a-core_doom
+	url = git@github.com:chiplet/a-core_doom.git
