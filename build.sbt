@@ -20,6 +20,10 @@ val accVersion  = settingKey[String]("The version of a_core_common used for buil
 ambaVersion := "0.7+"
 accVersion  := "0.4+"
 
+lazy val acc = (project in file("ACoreChip"))
+acc / ambaVersion := ambaVersion.value
+acc / accVersion  := accVersion.value
+
 lazy val acoreplayground = (project in file("."))
   .settings(
     name := "acoreplayground",
