@@ -23,3 +23,8 @@ project/*
 .metals/
 .bsp/
 test_run_dir/
+
+# vivado
+vivado_pid*.str
+*.jou
+*.log

@@ -20,6 +20,8 @@ endif
 
 # Generate C++ in library form
 VERILATOR_FLAGS += -cc
+VERILATOR_FLAGS += --threads 1
+VERILATOR_FLAGS += -CFLAGS "-pthread"
 # Optimize
 VERILATOR_FLAGS += -x-assign fast
 # Warn abount lint issues; may not want this on less solid designs
@@ -43,6 +45,7 @@ VLOG_SOURCES = $(addprefix verilog/, acorechip.v AsyncResetSyncBB.v)
 
 VERILATOR_SOURCES =
 VERILATOR_SOURCES += $(VERILATOR_ROOT)/include/verilated.cpp
+VERILATOR_SOURCES += $(VERILATOR_ROOT)/include/verilated_threads.cpp
 VERILATOR_SOURCES += $(VERILATOR_ROOT)/include/verilated_vcd_c.cpp
 
 # Input files for Verilator
@@ -63,9 +66,15 @@ INCLUDES += `sdl2-config --cflags`
 AC_LIBS =
 AC_LIBS += -L ./obj_dir
 
+CFLAGS =
+# multithreading
+CFLAGS += -DVL_THREADED=1
+CFLAGS += -lpthread
+
 LDFLAGS =
 LDFLAGS += -l:V$(VERILOG_TOP)__ALL.a
-LDFLAGS += `sdl2-config --libs`
+# LDFLAGS += -pthread
+LDFLAGS += `sdl2-config --cflags --libs`
 
 run: build
 	@echo
@@ -88,7 +97,7 @@ include $(VERILATOR_ROOT)/include/verilated.mk
 build: verilate
 	@echo
 	@echo "-- BUILD -------------------"
-	g++ -o obj_dir/V$(VERILOG_TOP) -O2 -g -fsanitize=address $(INCLUDES) $(AC_LIBS) src/sim_main.cpp src/sim_display.cpp src/remote_bitbang.cpp $(VERILATOR_SOURCES) $(LDFLAGS)
+	g++ $(CFLAGS) -o obj_dir/V$(VERILOG_TOP) -O2 -g -fsanitize=address $(INCLUDES) $(AC_LIBS) src/sim_main.cpp src/sim_display.cpp src/remote_bitbang.cpp $(VERILATOR_SOURCES) $(LDFLAGS)
 
 verilate: verilog/acorechip.v
 	@echo

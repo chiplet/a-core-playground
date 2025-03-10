@@ -24,8 +24,6 @@
 
 // #define PRINT_EXECUTION_TRACE
 
-int asd = 0;
-
 // Legacy function required only so linking works on Cygwin and MSVC++
 double sc_time_stamp() { return 0; }
 
@@ -235,6 +233,7 @@ int main(int argc, char** argv, char** env) {
     // Pass arguments so Verilated code can see them, e.g. $value$plusargs
     // This needs to be called before you create any model
     contextp->commandArgs(argc, argv);
+    // contextp->threadContextInit();
 
     // Construct the Verilated model, from Vtop.h generated from Verilating "top.v".
     // Using unique_ptr is similar to "Vtop* top = new Vtop" then deleting at end.
@@ -242,7 +241,7 @@ int main(int argc, char** argv, char** env) {
     const std::unique_ptr<Vacorechip> top{new Vacorechip{contextp.get(), "TOP"}};
 
     // write program binary to program memory banks
-    uint8_t* banks[4] = {
+    uint8_t* pm_banks[4] = {
         (uint8_t*)&top->rootp->acorechip__DOT__progmem__DOT__mem_array_0,
         (uint8_t*)&top->rootp->acorechip__DOT__progmem__DOT__mem_array_1,
         (uint8_t*)&top->rootp->acorechip__DOT__progmem__DOT__mem_array_2,
@@ -252,15 +251,44 @@ int main(int argc, char** argv, char** env) {
     for (int i = 0; i < program_bytes.size(); i++) {
         uint32_t bank_addr = i >> 2;
         uint32_t bank_idx = i & 0b11;
-        banks[bank_idx][bank_addr] = program_bytes[i];
-        printf("pm[%d] = %d\n", i, program_bytes[i]); 
+        pm_banks[bank_idx][bank_addr] = program_bytes[i];
+        // printf("pm[%d] = %d\n", i, program_bytes[i]);
     }
+    printf("Programming sequence done.");
 
     // Set Vtop's input signals
     top->reset = 0;
     top->clock = 0;
 
-    SimDisplay display(320, 200, (uint8_t*)&top->rootp->acorechip__DOT__ram__DOT__mem_array_0);
+    // Visualize screen buffer contents
+    // uint32_t screen3_addr = 0x2004cf88;
+    // uint32_t screen3_offset = screen3_addr - 0x20000000;
+    uint32_t screen_addr = 0x2004cf88;
+    uint32_t screen_offset = screen_addr - 0x20000000;
+
+    uint8_t* ram_banks[4] = {
+        (uint8_t*)&top->rootp->acorechip__DOT__ram__DOT__mem_array_0,
+        (uint8_t*)&top->rootp->acorechip__DOT__ram__DOT__mem_array_1,
+        (uint8_t*)&top->rootp->acorechip__DOT__ram__DOT__mem_array_2,
+        (uint8_t*)&top->rootp->acorechip__DOT__ram__DOT__mem_array_3
+    };
+    uint8_t* vram_banks[4] = {
+        (uint8_t*)&top->rootp->acorechip__DOT__vram__DOT__mem_array_0,
+        (uint8_t*)&top->rootp->acorechip__DOT__vram__DOT__mem_array_1,
+        (uint8_t*)&top->rootp->acorechip__DOT__vram__DOT__mem_array_2,
+        (uint8_t*)&top->rootp->acorechip__DOT__vram__DOT__mem_array_3
+    };
+    // SimDisplay display3("screens[3]", 320, 200, 4, ram_banks, screen3_offset);
+    // SimDisplay display2("screens[2]", 320, 200, 4, ram_banks, screen3_offset + 1*320*200);
+    // SimDisplay display1("screens[1]", 320, 200, 4, ram_banks, screen3_offset + 2*320*200);
+    // SimDisplay display0("screens[0]", 320, 200, 4, ram_banks, screen3_offset + 3*320*200);
+    SimDisplay display0("vram", 320, 200, 4, vram_banks, 0);
+
+    // Visualize RAM contents as pixels
+    // SimDisplay display(2048, 512, (uint8_t*)&top->rootp->acorechip__DOT__ram__DOT__mem_array_0);
+    // SimDisplay display(512, 512, (uint8_t*)&top->rootp->acorechip__DOT__ram__DOT__mem_array_0);
+    // SimDisplay display(320, 200, (uint8_t*)&top->rootp->acorechip__DOT__ram__DOT__mem_array_0);
+    // SimDisplay display(320, 200, (uint8_t*)&top->rootp->acorechip__DOT__vram__DOT__mem_array_0);
 
     // const uint16_t port = 1234;
     // JtagRemoteBitbang jtag(
@@ -318,7 +346,10 @@ int main(int argc, char** argv, char** env) {
 #ifdef PRINT_EXECUTION_TRACE            
             printf("----------RENDER FRAME----------\n");
 #endif // PRINT_EXECUTION_TRACE
-            display.render();
+            display0.render();
+            // display1.render();
+            // display2.render();
+            // display3.render();
         }
         // if (contextp->time() % 4 == 0)
         //     jtag.tick();
@@ -327,9 +358,11 @@ int main(int argc, char** argv, char** env) {
         last_pc = pc;
         pc = top->rootp->acorechip__DOT__core__DOT__ifd_id_reg_pc;
         uint32_t instr = top->rootp->acorechip__DOT__core__DOT__ifd_id_reg_ifetch_rdata;
-        if (instr)
-            printf("pc=0x%08x : instr=0x%08x : %s\n", pc, instr, disassemble(instr).c_str()
-        );
+        std::string instr_str = disassemble(instr);
+        if (pc != last_pc) {
+            // if (instr_str[0] == 'j') // bootleg filter for function calls
+            printf("pc=0x%08x : instr=0x%08x : %s\n", pc, instr, instr_str.c_str());
+        }
 #endif // PRINT_EXECUTION_TRACE
 
         // access screenbuffer array directly
@@ -340,6 +373,12 @@ int main(int argc, char** argv, char** env) {
         if (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
                 break;
+            }
+            if (e.type == SDL_KEYDOWN) {
+                if (e.key.keysym.sym == SDLK_d) {
+                    printf("Dumping screen buffer to a file.\n");
+                    display0.dump("framebuf.bin");
+                }
             }
         }
 

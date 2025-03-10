@@ -26,6 +26,8 @@ cd tb-verilator
 # install verilator if running for the first time
 scripts/install_verilator.sh
 
+source ~/venv/bin/
+
 # define VERILATOR_ROOT and such
 source sourceme
 
